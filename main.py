@@ -181,10 +181,10 @@ if args.traintime == True :
         single_model.save_weights('weights/model_single{}_id{}c{}m{}f{}.h5'.format(args.dataset,id,c, m,f))
 
 else :
-    if not os.path.exists('results_{}_id{}.csv'.format(args.dataset,id)):
+    if not os.path.exists('results/results_{}_id{}.csv'.format(args.dataset,id)):
         df = pd.DataFrame(columns = ['type','perturbation', 'coarse_acc','middle_acc','fine_acc','coarse_conf','middle_conf','fine_conf' ])
-        df.to_csv('results_{}_id{}.csv'.format(args.dataset,id), index=False)
-    df = pd.read_csv('results_{}_id{}.csv'.format(args.dataset,id))
+        df.to_csv('results/results_{}_id{}.csv'.format(args.dataset,id), index=False)
+    df = pd.read_csv('results/results_{}_id{}.csv'.format(args.dataset,id))
     per_name = ''
     if args.perturbation=='warp':
         per_name = "warp_s{}_t{}".format(args.s,args.t)
@@ -228,7 +228,7 @@ else :
         print(acc_m)
         print(acc_f)
         df = df.append({'type':'multi-output','perturbation':per_name, 'coarse_acc':acc_c,'middle_acc':acc_m,'fine_acc':acc_f, 'coarse_conf':coarse_conf ,'middle_conf': middle_conf,'fine_conf':fine_conf }, ignore_index=True)
-        df.to_csv('results_{}_id{}.csv'.format(args.dataset,id), index=False)
+        df.to_csv('results/results_{}_id{}.csv'.format(args.dataset,id), index=False)
     if args.single:
         optimizer = tf.keras.optimizers.Adam(lr = 1e-4)
         single_model.compile(loss = {"fine":'categorical_crossentropy' },loss_weights = {"fine":3.3},optimizer= optimizer ,metrics=
@@ -245,4 +245,4 @@ else :
         print(conf_m)
         print(conf_f)
         df = df.append({'type':'single_output','perturbation':per_name, 'coarse_acc':acc_c,'middle_acc':acc_m,'fine_acc':acc_f}, ignore_index=True)
-        df.to_csv('results_MNIST_id{}.csv'.format(id), index=False)
+        df.to_csv('results/results_MNIST_id{}.csv'.format(id), index=False)

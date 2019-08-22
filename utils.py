@@ -38,7 +38,7 @@ def acc_cmf(y_coarse, y_middle, y_fine,y_testfine1 , dataset):
             elif np.argmax(y2)==1 and not(y_testfine1[i] in perm[2:4]):
                 not_correct.add(i)
                 error_middle.append(i)
-            elif np.argmax(y2)==2 and not(y_testfine1[i] in [perm[4:6]):
+            elif np.argmax(y2)==2 and not(y_testfine1[i] in perm[4:6]):
                 not_correct.add(i)
                 error_middle.append(i)
             elif np.argmax(y2)==3 and not(y_testfine1[i] in perm[6:8]):
@@ -60,7 +60,7 @@ def acc_cmf(y_coarse, y_middle, y_fine,y_testfine1 , dataset):
             elif np.argmax(y2)==1 and not(y_testfine1[i] in perm[3:5]):
                 not_correct.add(i)
                 error_middle.append(i)
-            elif np.argmax(y2)==2 and not(y_testfine1[i] in [perm[5:8]):
+            elif np.argmax(y2)==2 and not(y_testfine1[i] in perm[5:8]):
                 not_correct.add(i)
                 error_middle.append(i)
             elif np.argmax(y2)==3 and not(y_testfine1[i] in perm[8:]):

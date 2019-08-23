@@ -4,10 +4,55 @@ import tensorflow as tf
 from scipy.ndimage import gaussian_filter
 from scipy.misc import imread, imsave
 import scipy.io
-
+from scipy import ndimage
 
 from tensorflow.keras.datasets import mnist,fashion_mnist, cifar10
+def load_data(c = 1.0,m = 0.6, f = 0.2, dataset ='mnist'):
+    if dataset == 'mnist':
+        (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    elif dataset == 'fashion_mnist':
+        (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+    elif dataset == 'cifar10':
+        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
+    if dataset == 'SVHN':
+        mat = scipy.io.loadmat('train_32x32.mat')
+        mat_test = scipy.io.loadmat('test_32x32.mat')
+        x_train = np.array([mat['X'][:,:,:,i]/255. for i in range(73257)])
+        x_val = np.array([mat_test['X'][:,:,:,i]/255. for i in range(mat_test['X'].shape[-1])])[:-5000]
+        x_test = np.array([mat_test['X'][:,:,:,i]/255. for i in range(mat_test['X'].shape[-1])])[-5000:]
+        y_train = mat['y']
+        y_test = mat_test['y']
+        y_train = np.array([y_train[i]%10 for i in range(y_train.size)])
+        y_test = np.array([y_test[i]%10 for i in range(y_test.size)])
+        y_test1= np.copy(y_test)
+        y_train = tf.keras.utils.to_categorical(labels)
+        y_test = tf.keras.utils.to_categorical(y_test)
+        y_val = test_labels[:-5000]
+        y_test = y_test[-5000:]
+        x_train = x_train.reshape(x_train.shape[0], 32, 32, 3)
+        x_val = x_val.reshape(x_val.shape[0], 32, 32, 3)
+        x_test = x_test.reshape(x_test.shape[0], 32, 32, 3)
+
+
+    else :
+        x_train = (1./255.)*x_train
+        n = x_test.shape[0]
+        x_val = (1./255.)*x_test[:int(n/2)]
+        x_test = (1./255.)*x_test[int(n/2):]
+
+        y_test1= np.copy(y_test)
+        y_train = tf.keras.utils.to_categorical(y_train)
+        y_test = tf.keras.utils.to_categorical(y_test)
+        print(y_test.shape)
+        y_val = y_test[:int(n/2)]
+        y_test = y_test[int(n/2):]
+        print(y_val.shape)
+        if len(x_train.shape) == 3 :
+            x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], x_train.shape[2], 1)
+            x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], x_test.shape[2], 1)
+            x_val = x_val.reshape(x_val.shape[0], x_val.shape[1], x_val.shape[2], 1)
+    return(x_train,x_val,x_test,y_train,y_val,y_test,y_test1)
 
 def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.5, dataset ='mnist'):
     """
@@ -175,6 +220,11 @@ def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.
         for i in range(x.shape[0]):
             tmp[i,:,:,:] += np.random.normal(loc=0.0, scale= sigma/255., size=x[i,:,:,:].shape)
 
+        return(tmp)
+    def blur(x):
+        tmp = np.copy(x)
+        for i in range(x.shape[0]):
+            tmp[i,:,:,:] = ndimage.gaussian_filter(tmp[i,:,:,:], sigma=1.5)
         return(tmp)
     def mean_shift(x,delta):
         """
@@ -347,7 +397,8 @@ def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.
         x_test = sym_ver(x_test)
     elif perturbation == "sym_hor":
         x_test = sym_hor(x_test)
-
+    elif perturbation == "blur":
+        x_test = blur(x_test)
     ### PREPROCESS THE REMAINING DATA
     print("Preprocessing the data ...")
     x_trains = preprocessing_data(x_train,c,m,f)

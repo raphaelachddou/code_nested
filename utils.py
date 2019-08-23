@@ -7,7 +7,7 @@ def acc_cmf(y_coarse, y_middle, y_fine,y_testfine1 , dataset):
     error_coarse = []
     error_middle = []
     error_fine = []
-
+    not_correct = set()
     perm_mnist = [3,5,8,6,0,4,7,9,2,1]
     perm_svhn = [3,5,8,6,0,4,7,9,2,1]
     perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
@@ -29,7 +29,6 @@ def acc_cmf(y_coarse, y_middle, y_fine,y_testfine1 , dataset):
         y2 = y_middle[i,:]
         y3 = y_fine[i,:]
         if np.argmax(y3)!=y_testfine1[i]:
-            not_correct.add(i)
             error_fine.append(i)
         if dataset == 'cifar10':
             if np.argmax(y2)==0 and not(y_testfine1[i] in perm[0:2]):

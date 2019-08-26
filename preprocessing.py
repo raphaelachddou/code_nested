@@ -26,9 +26,9 @@ def load_data(c = 1.0,m = 0.6, f = 0.2, dataset ='mnist'):
         y_train = np.array([y_train[i]%10 for i in range(y_train.size)])
         y_test = np.array([y_test[i]%10 for i in range(y_test.size)])
         y_test1= np.copy(y_test)
-        y_train = tf.keras.utils.to_categorical(labels)
+        y_train = tf.keras.utils.to_categorical(y_train)
         y_test = tf.keras.utils.to_categorical(y_test)
-        y_val = test_labels[:-5000]
+        y_val = y_test[:-5000]
         y_test = y_test[-5000:]
         x_train = x_train.reshape(x_train.shape[0], 32, 32, 3)
         x_val = x_val.reshape(x_val.shape[0], 32, 32, 3)
@@ -53,7 +53,6 @@ def load_data(c = 1.0,m = 0.6, f = 0.2, dataset ='mnist'):
             x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], x_test.shape[2], 1)
             x_val = x_val.reshape(x_val.shape[0], x_val.shape[1], x_val.shape[2], 1)
     return(x_train,x_val,x_test,y_train,y_val,y_test,y_test1)
-
 def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.5, dataset ='mnist'):
     """
     large function with a lot of subfunctions described independantly
@@ -82,9 +81,9 @@ def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.
         y_train = np.array([y_train[i]%10 for i in range(y_train.size)])
         y_test = np.array([y_test[i]%10 for i in range(y_test.size)])
         y_test1= np.copy(y_test)
-        y_train = tf.keras.utils.to_categorical(labels)
+        y_train = tf.keras.utils.to_categorical(y_train)
         y_test = tf.keras.utils.to_categorical(y_test)
-        y_val = test_labels[:-5000]
+        y_val = y_test[:-5000]
         y_test = y_test[-5000:]
         x_train = x_train.reshape(x_train.shape[0], 32, 32, 3)
         x_val = x_val.reshape(x_val.shape[0], 32, 32, 3)

@@ -117,7 +117,20 @@ def acc_cmf_single(y_pred,y_test_fine,dataset):
         #     if (pred in [1,2,4,7,9]) and (true in [1,2, 4, 7, 9]):
         #         cc+=1
         if dataset == 'cifar10':
-            pass
+            if (pred in perm[0:2]) and (true in perm[0:2]):
+                m+=1
+            if (pred in perm[2:4]) and (true in perm[2:4]):
+                m+=1
+            if (pred in perm[4:6]) and (true in perm[4:6]):
+                m+=1
+            if (pred in perm[6:8]) and (true in perm[6:8]):
+                m+=1
+            if (pred in perm[8:]) and (true in perm[8:]):
+                m+=1
+            if (pred in perm[0:4]) and (true in perm[0:4]):
+                c+=1
+            if (pred in perm[4:]) and (true in perm[4:]):
+                c+=1
         else :
             if (pred in perm[0:3]) and (true in perm[0:3]):
                 m+=1

@@ -248,5 +248,5 @@ else :
         print(conf_c)
         print(conf_m)
         print(conf_f)
-        df = df.append({'type':'single_output','perturbation':per_name, 'coarse_acc':acc_c,'middle_acc':acc_m,'fine_acc':acc_f}, ignore_index=True)
+        df = df.append({'type':'single_output','perturbation':per_name, 'coarse_acc':acc_c,'middle_acc':acc_m,'fine_acc':acc_f,'coarse_conf':conf_c ,'middle_conf': conf_m,'fine_conf':conf_f}, ignore_index=True)
         df.to_csv('results/results_{}_id{}_c{}_m{}_f{}.csv'.format(args.dataset,id,c, m,f), index=False)

@@ -11,14 +11,10 @@ import pandas as pd
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Input, Concatenate, BatchNormalization
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Input, Concatenate, BatchNormalization, Activation
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, Cropping2D, GlobalAveragePooling2D
 from tensorflow.keras import backend as K
 from time import time
-
-
-from preprocessing import *
-from models import *
 
 def preprocessing_labels(y,c = 1.,m = 0.6, f = 0.2 ,dataset = 'mnist'):
     """
@@ -37,6 +33,7 @@ def preprocessing_labels(y,c = 1.,m = 0.6, f = 0.2 ,dataset = 'mnist'):
     perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
     perm_fmnist = [0,2,6,3,4,5,7,9,1,8]
     perm = [0,1,2,3,4,5,6,7,8,9]
+    n = y.shape[0]
     y_res1 = np.zeros((int(c*n),2))
     y_res2= np.zeros((int(m*n),4))
     y_res3 = np.zeros((int(f*n),10))
@@ -49,7 +46,7 @@ def preprocessing_labels(y,c = 1.,m = 0.6, f = 0.2 ,dataset = 'mnist'):
         perm = perm_fmnist
     elif dataset == 'SVHN':
         perm = perm_svhn
-    n = y.shape[0]
+
     if dataset == 'cifar10':
         for i in range(n):
             if i< int(c*n):
@@ -86,6 +83,8 @@ def preprocessing_labels(y,c = 1.,m = 0.6, f = 0.2 ,dataset = 'mnist'):
                     y_res2[i,2] = 1
                 elif np.argmax(y[i]) in perm[8:]:
                     y_res2[i,3] = 1
+            if i<int(f*n):
+                y_res3[i,np.argmax(y[i])] = 1
     return(y_res1,y_res2,y_res3)
 
 def normalisation_l2(x):
@@ -104,8 +103,8 @@ def normalisation_l_inf(x):
     return(res)
 def add_uniform(x,y,n_u):
     n = x.shape[0]
-    print(n)
-    print(y.shape[1])
+    print(x.shape)
+    print(y.shape)
     d = x.shape[1]
     new_shape = (n_u+n,d)
     resx = np.zeros(new_shape, dtype = np.float32)
@@ -264,24 +263,12 @@ def plots(array,scaled_array,y_test, granularity,perturbation):
 
 def weighted_majority_vote(c_pred,m_pred,f_pred,acc_c,acc_m,acc_f, dataset):
     c,m,f = np.argmax(c_pred),np.argmax(m_pred),np.argmax(f_pred)
-    perm_mnist = [3,5,8,6,0,4,7,9,2,1]
-    perm_svhn = [3,5,8,6,0,4,7,9,2,1]
-    perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
-    perm_fmnist = [0,2,6,3,4,5,7,9,1,8]
-    perm = [0,1,2,3,4,5,6,7,8,9]
     coarse = np.zeros(2)
     middle = np.zeros(4)
     fine = np.zeros(10)
 
     if dataset == 'cifar10':
-        perm = perm_cifar10
         middle = np.zeros(5)
-    elif dataset == 'mnist':
-        perm = perm_mnist
-    elif dataset == 'fashion_mnist':
-        perm = perm_fmnist
-    elif dataset == 'SVHN':
-        perm = perm_svhn
     coarse[c] = 1
     middle[m] = 1
     fine[f] = 1
@@ -290,76 +277,62 @@ def weighted_majority_vote(c_pred,m_pred,f_pred,acc_c,acc_m,acc_f, dataset):
     w2 = np.log(acc_m/(1.-acc_m))
     w3 = np.log(acc_f/(1.-acc_f))
     if dataset == 'cifar10':
-    for i in range(10):
+        for i in range(10):
             if i <2:
-                res[i] = w1*coarse[0] + w2*middle[0] + w3*fine[perm[i]]
+                res[i] = w1*coarse[0] + w2*middle[0] + w3*fine[i]
             elif 2<=i <4:
-                res[i] = w1*coarse[0] + w2*middle[1] + w3*fine[perm[i]]
+                res[i] = w1*coarse[0] + w2*middle[1] + w3*fine[i]
             elif 4 <=i<6:
-                res[i] = w1*coarse[1] + w2*middle[2] + w3*fine[perm[i]]
+                res[i] = w1*coarse[1] + w2*middle[2] + w3*fine[i]
             elif 6<=i<8:
-                res[i] = w1*coarse[1] + w2*middle[3] + w3*fine[perm[i]]
+                res[i] = w1*coarse[1] + w2*middle[3] + w3*fine[i]
             else:
-                res[i] = w1*coarse[1] + w2*middle[4] + w3*fine[perm[i]]
-    for i in range(10):
-        if i <3:
-            res[i] = w1*coarse[0] + w2*middle[0] + w3*fine[perm[i]]
-        elif 3<=i <5:
-            res[i] = w1*coarse[0] + w2*middle[1] + w3*fine[perm[i]]
-        elif 5 <=i<8:
-            res[i] = w1*coarse[1] + w2*middle[2] + w3*fine[perm[i]]
-        else:
-            res[i] = w1*coarse[1] + w2*middle[3] + w3*fine[perm[i]]
+                res[i] = w1*coarse[1] + w2*middle[4] + w3*fine[i]
+    else :
+        for i in range(10):
+            if i <3:
+                res[i] = w1*coarse[0] + w2*middle[0] + w3*fine[i]
+            elif 3<=i <5:
+                res[i] = w1*coarse[0] + w2*middle[1] + w3*fine[i]
+            elif 5 <=i<8:
+                res[i] = w1*coarse[1] + w2*middle[2] + w3*fine[i]
+            else:
+                res[i] = w1*coarse[1] + w2*middle[3] + w3*fine[i]
     index = np.argmax(res)
     return(index)
-def majority_vote(c_pred,m_pred,f_pred):
+def majority_vote(c_pred,m_pred,f_pred,dataset):
     c,m,f = np.argmax(c_pred),np.argmax(m_pred),np.argmax(f_pred)
-    perm_mnist = [3,5,8,6,0,4,7,9,2,1]
-    perm_svhn = [3,5,8,6,0,4,7,9,2,1]
-    perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
-    perm_fmnist = [0,2,6,3,4,5,7,9,1,8]
-    perm = [0,1,2,3,4,5,6,7,8,9]
     coarse = np.zeros(2)
     middle = np.zeros(4)
     fine = np.zeros(10)
-
     if dataset == 'cifar10':
-        perm = perm_cifar10
         middle = np.zeros(5)
-    elif dataset == 'mnist':
-        perm = perm_mnist
-    elif dataset == 'fashion_mnist':
-        perm = perm_fmnist
-    elif dataset == 'SVHN':
-        perm = perm_svhn
     coarse[c] = 1
     middle[m] = 1
     fine[f] = 1
     res = np.zeros(10)
-    w1 = np.log(acc_c/(1.-acc_c))
-    w2 = np.log(acc_m/(1.-acc_m))
-    w3 = np.log(acc_f/(1.-acc_f))
     if dataset == 'cifar10':
-    for i in range(10):
+        for i in range(10):
             if i <2:
-                res[i] = coarse[0] + middle[0] + fine[perm[i]]
+                res[i] = coarse[0] + middle[0] + fine[i]
             elif 2<=i <4:
-                res[i] = coarse[0] + middle[1] + fine[perm[i]]
+                res[i] = coarse[0] + middle[1] + fine[i]
             elif 4 <=i<6:
-                res[i] = coarse[1] + middle[2] + fine[perm[i]]
+                res[i] = coarse[1] + middle[2] + fine[i]
             elif 6<=i<8:
-                res[i] = coarse[1] + middle[3] + fine[perm[i]]
+                res[i] = coarse[1] + middle[3] + fine[i]
             else:
-                res[i] = coarse[1] + middle[4] + fine[perm[i]]
-    for i in range(10):
-        if i <3:
-            res[i] = coarse[0] + middle[0] + fine[perm[i]]
-        elif 3<=i <5:
-            res[i] = coarse[0] + middle[1] + fine[perm[i]]
-        elif 5 <=i<8:
-            res[i] = coarse[1] + middle[2] + fine[perm[i]]
-        else:
-            res[i] = coarse[1] + middle[3] + fine[perm[i]]
+                res[i] = coarse[1] + middle[4] + fine[i]
+    else :
+        for i in range(10):
+            if i <3:
+                res[i] = coarse[0] + middle[0] + fine[i]
+            elif 3<=i <5:
+                res[i] = coarse[0] + middle[1] + fine[i]
+            elif 5 <=i<8:
+                res[i] = coarse[1] + middle[2] + fine[i]
+            else:
+                res[i] = coarse[1] + middle[3] + fine[i]
     index = np.argmax(res)
     return(index)
 def acc_one_hot(true_f,pred):
@@ -377,47 +350,34 @@ def acc_function(true_f, pred):
     return(acc)
 
 def proba(c_pred,m_pred,f_pred, dataset):
-    perm_mnist = [3,5,8,6,0,4,7,9,2,1]
-    perm_svhn = [3,5,8,6,0,4,7,9,2,1]
-    perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
-    perm_fmnist = [0,2,6,3,4,5,7,9,1,8]
-    perm = [0,1,2,3,4,5,6,7,8,9]
-    if dataset == 'cifar10':
-        perm = perm_cifar10
-        middle = np.zeros(5)
-    elif dataset == 'mnist':
-        perm = perm_mnist
-    elif dataset == 'fashion_mnist':
-        perm = perm_fmnist
-    elif dataset == 'SVHN':
-        perm = perm_svhn
+
     p = np.zeros(10)
     if dataset == 'cifar10':
         for i in range(10):
-            if i in perm[0:4]:
-                if i in perm[0:2]:
-                    p[i] = c_pred[0]*(m_pred[0]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[perm[0:2]]))
-                elif i in perm[2:4]:
-                    p[i] = c_pred[0]*(m_pred[1]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[perm[2:4]]))
-            if i in perm[4:]:
-                if i in perm[4:6]:
-                    p[i] = c_pred[1]*(m_pred[2]/(m_pred[2]+m_pred[3]+m_pred[4]))*(f_pred[i]/np.sum(f_pred[perm[4:6]]))
-                elif i in perm[6:8]:
-                    p[i] = c_pred[1]*(m_pred[3]/(m_pred[2]+m_pred[3]+m_pred[4]))*(f_pred[i]/np.sum(f_pred[perm[6:8]]))
-                elif i in perm[8:]:
-                    p[i] = c_pred[1]*(m_pred[4]/(m_pred[2]+m_pred[3]+m_pred[4]))*(f_pred[i]/np.sum(f_pred[perm[8:]]))
+            if i <4:
+                if i <2:
+                    p[i] = c_pred[0]*(m_pred[0]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[0:2]))
+                elif i <4:
+                    p[i] = c_pred[0]*(m_pred[1]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[2:4]))
+            if i >=4:
+                if i <6:
+                    p[i] = c_pred[1]*(m_pred[2]/(m_pred[2]+m_pred[3]+m_pred[4]))*(f_pred[i]/np.sum(f_pred[4:6]))
+                elif i <8:
+                    p[i] = c_pred[1]*(m_pred[3]/(m_pred[2]+m_pred[3]+m_pred[4]))*(f_pred[i]/np.sum(f_pred[6:8]))
+                elif i <10:
+                    p[i] = c_pred[1]*(m_pred[4]/(m_pred[2]+m_pred[3]+m_pred[4]))*(f_pred[i]/np.sum(f_pred[8:10]))
     else :
         for i in range(10):
-            if i in perm[0:5]
-                if i in perm[0:3]:
-                    p[i] = c_pred[0]*(m_pred[0]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[perm[0:3]]))
-                elif i in perm[3:5]:
-                    p[i] = c_pred[0]*(m_pred[1]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[perm[3:5]]))
-            if i in perm[5:]:
-                if i in perm[5:8]:
-                    p[i] = c_pred[1]*(m_pred[2]/(m_pred[2]+m_pred[3]))*(f_pred[i]/np.sum(f_pred[perm[5:8]]))
-                elif i in perm[8:]:
-                    p[i] = c_pred[1]*(m_pred[3]/(m_pred[2]+m_pred[3]))*(f_pred[i]/np.sum(f_pred[perm[8:]]))
+            if i <5:
+                if i <3:
+                    p[i] = c_pred[0]*(m_pred[0]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[0:3]))
+                elif i <5:
+                    p[i] = c_pred[0]*(m_pred[1]/(m_pred[0]+m_pred[1]))*(f_pred[i]/np.sum(f_pred[3:5]))
+            if i >=5:
+                if i <8:
+                    p[i] = c_pred[1]*(m_pred[2]/(m_pred[2]+m_pred[3]))*(f_pred[i]/np.sum(f_pred[5:8]))
+                elif i <10:
+                    p[i] = c_pred[1]*(m_pred[3]/(m_pred[2]+m_pred[3]))*(f_pred[i]/np.sum(f_pred[8:]))
     return(p)
 def proba_middle(c_pred,m_pred,dataset):
 
@@ -441,12 +401,12 @@ def finetocoarse(f_pred,dataset):
     res = np.zeros(2)
     for i in range(10):
         if dataset =='cifar10':
-            if i in perm[0:4]:
+            if i <4:
                 res[0]+=f_pred[i]
             else :
                 res[1]+=f_pred[i]
         else:
-            if i in perm[0:5]:
+            if i <5:
                 res[0]+=f_pred[i]
             else :
                 res[1]+=f_pred[i]
@@ -463,41 +423,29 @@ def middletocoarse(m_pred):
 
 def finetomiddle(f_pred,dataset):
     res = np.zeros(4)
-    perm_mnist = [3,5,8,6,0,4,7,9,2,1]
-    perm_svhn = [3,5,8,6,0,4,7,9,2,1]
-    perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
-    perm_fmnist = [0,2,6,3,4,5,7,9,1,8]
-    perm = [0,1,2,3,4,5,6,7,8,9]
+
     if dataset == 'cifar10':
-        perm = perm_cifar10
         res = np.zeros(5)
-    elif dataset == 'mnist':
-        perm = perm_mnist
-    elif dataset == 'fashion_mnist':
-        perm = perm_fmnist
-    elif dataset == 'SVHN':
-        perm = perm_svhn
-    if dataset == 'cifar10':
         for i in range(10):
-            if i in perm[0:2]:
+            if i <2:
                 res[0]+=f_pred[i]
-            elif i in perm[2:4]:
+            elif i <4:
                 res[1]+=f_pred[i]
-            elif i in perm[4:6]:
+            elif i <6:
                 res[2]+=f_pred[i]
-            elif i in perm[6:8]:
+            elif i <8:
                 res[3]+=f_pred[i]
-            elif i in perm[8:]:
+            elif i >=8:
                 res[4]+=f_pred[i]
     else :
         for i in range(10):
-            if i in perm[0:3]:
+            if i <3:
                 res[0]+=f_pred[i]
-            elif i in perm[3:5]:
+            elif i <5:
                 res[1]+=f_pred[i]
-            elif i in perm[5:8]:
+            elif i <8:
                 res[2]+=f_pred[i]
-            elif i in perm[8:]:
+            elif i >8:
                 res[3]+=f_pred[i]
     return(res)
 
@@ -513,55 +461,42 @@ def proba_fc(c_pred,f_pred,dataset):
     p = np.zeros(10)
     for i in range(10):
         if dataset =='cifar10':
-            if i in perm[0:4]:
-                p[i] = (c_pred[0])*(f_pred[i]/np.sum(f_pred[perm[0:4]]))
-            if i in perm[4:]:
-                p[i] = (c_pred[1])*(f_pred[i]/np.sum(f_pred[perm[4:]]))
+            if i <4:
+                p[i] = (c_pred[0])*(f_pred[i]/np.sum(f_pred[0:4]))
+            else:
+                p[i] = (c_pred[1])*(f_pred[i]/np.sum(f_pred[4:]))
         else:
-            if i in perm[0:5]:
-                p[i] = (c_pred[0])*(f_pred[i]/np.sum(f_pred[perm[0:5]]))
-            if i in perm[5:]:
-                p[i] = (c_pred[1])*(f_pred[i]/np.sum(f_pred[perm[5:]]))
+            if i<5:
+                p[i] = (c_pred[0])*(f_pred[i]/np.sum(f_pred[0:5]))
+            else:
+                p[i] = (c_pred[1])*(f_pred[i]/np.sum(f_pred[5:]))
     return(p)
-def proba_fm(m_pred,f_pred):
+def proba_fm(m_pred,f_pred, dataset):
     p = np.zeros(10)
-    perm_mnist = [3,5,8,6,0,4,7,9,2,1]
-    perm_svhn = [3,5,8,6,0,4,7,9,2,1]
-    perm_cifar10 = [0,1,8,9,2,6,3,5,4,7]
-    perm_fmnist = [0,2,6,3,4,5,7,9,1,8]
-    perm = [0,1,2,3,4,5,6,7,8,9]
-    if dataset == 'cifar10':
-        perm = perm_cifar10
-    elif dataset == 'mnist':
-        perm = perm_mnist
-    elif dataset == 'fashion_mnist':
-        perm = perm_fmnist
-    elif dataset == 'SVHN':
-        perm = perm_svhn
     if dataset == 'cifar10':
         for i in range(10):
-            if i in perm[0:4]:
-                if i in perm[0:2]:
-                    p[i] = (m_pred[0])*(f_pred[i]/np.sum(f_pred[perm[0:2]]))
-                elif i in perm[2:4]:
-                    p[i] = (m_pred[1])*(f_pred[i]/np.sum(f_pred[perm[2:4]]))
-            if i in perm[4:]:
-                if i in perm[4:6]:
-                    p[i] = (m_pred[2])*(f_pred[i]/np.sum(f_pred[perm[4:6]]))
-                elif i in perm[6:8]:
-                    p[i] = (m_pred[3])*(f_pred[i]/np.sum(f_pred[perm[6:8]]))
-                elif i in perm[8:]:
-                    p[i] = (m_pred[4])*(f_pred[i]/np.sum(f_pred[perm[8:]]))
+            if i <4:
+                if i <2:
+                    p[i] = (m_pred[0])*(f_pred[i]/np.sum(f_pred[0:2]))
+                else:
+                    p[i] = (m_pred[1])*(f_pred[i]/np.sum(f_pred[2:4]))
+            else:
+                if i <6:
+                    p[i] = (m_pred[2])*(f_pred[i]/np.sum(f_pred[4:6]))
+                elif i <8:
+                    p[i] = (m_pred[3])*(f_pred[i]/np.sum(f_pred[6:8]))
+                else:
+                    p[i] = (m_pred[4])*(f_pred[i]/np.sum(f_pred[8:]))
     else :
         for i in range(10):
-            if i in perm[0:5]:
-                if i in perm[0:3]:
-                    p[i] = (m_pred[0])*(f_pred[i]/np.sum(f_pred[perm[0:3]]))
-                elif i in perm[3:5]:
-                    p[i] = (m_pred[1])*(f_pred[i]/np.sum(f_pred[perm[3:5]]))
-            if i in perm[5:]:
-                if i in perm[5:8]:
-                    p[i] = (m_pred[2])*(f_pred[i]/np.sum(f_pred[perm[5:8]]))
-                elif i in perm[8:]:
-                    p[i] = (m_pred[3])*(f_pred[i]/np.sum(f_pred[perm[8:]]))     
+            if i <5:
+                if i <3:
+                    p[i] = (m_pred[0])*(f_pred[i]/np.sum(f_pred[0:3]))
+                else:
+                    p[i] = (m_pred[1])*(f_pred[i]/np.sum(f_pred[3:5]))
+            else:
+                if i <8:
+                    p[i] = (m_pred[2])*(f_pred[i]/np.sum(f_pred[5:8]))
+                else:
+                    p[i] = (m_pred[3])*(f_pred[i]/np.sum(f_pred[8:]))
     return(p)

@@ -6,6 +6,7 @@ from scipy.misc import imread, imsave
 import scipy.io
 from scipy import ndimage
 
+
 from tensorflow.keras.datasets import mnist,fashion_mnist, cifar10
 def load_data(c = 1.0,m = 0.6, f = 0.2, dataset ='mnist'):
     if dataset == 'mnist':
@@ -53,6 +54,8 @@ def load_data(c = 1.0,m = 0.6, f = 0.2, dataset ='mnist'):
             x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], x_test.shape[2], 1)
             x_val = x_val.reshape(x_val.shape[0], x_val.shape[1], x_val.shape[2], 1)
     return(x_train,x_val,x_test,y_train,y_val,y_test,y_test1)
+
+
 def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.5, dataset ='mnist'):
     """
     large function with a lot of subfunctions described independantly
@@ -223,7 +226,7 @@ def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.
     def blur(x):
         tmp = np.copy(x)
         for i in range(x.shape[0]):
-            tmp[i,:,:,:] = ndimage.gaussian_filter(tmp[i,:,:,:], sigma=1.5)
+            tmp[i,:,:,:] = ndimage.gaussian_filter(tmp[i,:,:,:], sigma=2.5)
         return(tmp)
     def mean_shift(x,delta):
         """
@@ -378,7 +381,7 @@ def data_processing(c = 1.0,m = 0.6, f = 0.2, perturbation='warp', s = 2, t = 0.
             res = a*xx +b -yy
             res = np.clip(-res, 0.,1.)
 
-            for j in range(3):
+            for j in range(tmp.shape[3]):
                 tmp[i,:,:,j] = res*tmp[i,:,:,j]
         return tmp
 
